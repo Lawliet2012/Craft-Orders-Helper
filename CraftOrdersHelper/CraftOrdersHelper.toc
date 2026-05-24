@@ -1,12 +1,12 @@
 ## Interface: 120005
 ## Title: CraftOrdersHelper
-## Notes: Tracks crafting order favorite recipes and shows needed reagents at the Auction House
+## Notes: Tracks crafting order and profession favorite recipes, then shows needed reagents at the Auction House
 ## Author: OpenCode
-## Version: 1.4.3
+## Version: 1.4.4
 ## SavedVariables: CraftHelperDB
 ## SavedVariablesPerCharacter: CraftHelperDB_Char
 ## IconTexture: Interface\AddOns\CraftOrdersHelper\Icon
-## OptionalDeps: Auctionator, Blizzard_AuctionHouseUI, Blizzard_AuctionUI, Blizzard_ProfessionsCustomerOrders
+## OptionalDeps: Auctionator, Blizzard_AuctionHouseUI, Blizzard_AuctionUI, Blizzard_Professions, Blizzard_ProfessionsCustomerOrders
 
 Core.lua
 Data.lua

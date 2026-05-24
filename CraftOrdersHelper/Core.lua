@@ -1,6 +1,11 @@
 local addonName, CraftHelper = ...;
 _G.CraftHelper = CraftHelper;
 
+local CRAFT_ORDER_SOURCE = "craftorders";
+local PROFESSION_FAVORITE_SOURCE = "profession_favorites";
+local PROFESSION_TRACKED_SOURCE = "profession_tracked";
+local PROFESSION_RECIPE_SCAN_MODES = { false, true };
+
 local function SafeGetItemInfo(itemID)
     if C_Item and C_Item.GetItemInfo then
         return C_Item.GetItemInfo(itemID);
@@ -99,14 +104,18 @@ end);
 
 function CraftHelper:OnLoad()
     self.pendingProfessionRecipes = {};
+    self.professionRecipeScanModes = PROFESSION_RECIPE_SCAN_MODES;
     SafeRegisterEvent(self.events, "ADDON_LOADED");
     SafeRegisterEvent(self.events, "BAG_UPDATE");
     SafeRegisterEvent(self.events, "PLAYER_LOGIN");
     SafeRegisterEvent(self.events, "PLAYER_ENTERING_WORLD");
     SafeRegisterEvent(self.events, "CRAFTINGORDERS_CUSTOMER_FAVORITES_CHANGED");
     SafeRegisterEvent(self.events, "TRACKED_RECIPE_UPDATE");
+    SafeRegisterEvent(self.events, "TRADE_SKILL_FAVORITES_CHANGED");
+    SafeRegisterEvent(self.events, "TRADE_SKILL_DATA_SOURCE_CHANGED");
+    SafeRegisterEvent(self.events, "TRADE_SKILL_DETAILS_UPDATE");
+    SafeRegisterEvent(self.events, "TRADE_SKILL_LIST_UPDATE");
     SafeRegisterEvent(self.events, "TRADE_SKILL_SHOW");
-    SafeRegisterEvent(self.events, "TRADE_SKILL_UPDATE");
 end
 
 function CraftHelper:ADDON_LOADED(addon)
@@ -115,19 +124,19 @@ function CraftHelper:ADDON_LOADED(addon)
         self.UI:Init();
         C_Timer.After(2, function()
             self:ScanExistingFavorites();
-            self:ScheduleTrackedRecipeScan();
+            self:ScheduleProfessionRecipeScan();
         end);
     elseif addon == "Blizzard_ProfessionsCustomerOrders" then
         self:TryHookCraftingForm();
     elseif addon == "Blizzard_Professions" then
-        self:ScheduleTrackedRecipeScan();
+        self:ScheduleProfessionRecipeScan();
     end
 end
 
 function CraftHelper:PLAYER_LOGIN()
     self:TryHookCraftingForm();
     self.Data:ScanBags();
-    self:ScheduleTrackedRecipeScan();
+    self:ScheduleProfessionRecipeScan();
     self.UI:Refresh();
 end
 
@@ -135,7 +144,7 @@ function CraftHelper:PLAYER_ENTERING_WORLD()
     if not self.UI.ahMode then
         self.UI:DetectAndAttachToAuctionHouse();
     end
-    self:ScheduleTrackedRecipeScan();
+    self:ScheduleProfessionRecipeScan();
 end
 
 function CraftHelper:BAG_UPDATE()
@@ -151,25 +160,47 @@ end
 
 function CraftHelper:TRACKED_RECIPE_UPDATE(recipeID, tracked)
     if tracked then
-        self:QueueTrackedRecipe(recipeID, false);
-        self:QueueTrackedRecipe(recipeID, true);
+        self:QueueProfessionRecipe(recipeID, false, PROFESSION_TRACKED_SOURCE);
+        self:QueueProfessionRecipe(recipeID, true, PROFESSION_TRACKED_SOURCE);
     else
         if self:IsProfessionRecipeTracked(recipeID) then
-            self:QueueTrackedRecipe(recipeID, false);
-            self:QueueTrackedRecipe(recipeID, true);
+            self:QueueProfessionRecipe(recipeID, false, PROFESSION_TRACKED_SOURCE);
+            self:QueueProfessionRecipe(recipeID, true, PROFESSION_TRACKED_SOURCE);
         else
-            self.Data:RemoveRecipe(recipeID, "professions");
+            self.Data:RemoveRecipe(recipeID, PROFESSION_TRACKED_SOURCE);
             self.UI:Refresh();
         end
     end
 end
 
-CraftHelper["TRADE_SKILL_SHOW"] = function(self)
-    self:ScheduleTrackedRecipeScan();
+function CraftHelper:TRADE_SKILL_FAVORITES_CHANGED(isFavorite, recipeID)
+    if not recipeID then
+        self:ScheduleProfessionRecipeScan();
+        return;
+    end
+
+    if isFavorite then
+        self:QueueProfessionRecipe(recipeID, false, PROFESSION_FAVORITE_SOURCE);
+    else
+        self.Data:RemoveRecipe(recipeID, PROFESSION_FAVORITE_SOURCE);
+        self.UI:Refresh();
+    end
 end
 
-CraftHelper["TRADE_SKILL_UPDATE"] = function(self)
-    self:ScheduleTrackedRecipeScan();
+CraftHelper["TRADE_SKILL_DATA_SOURCE_CHANGED"] = function(self)
+    self:ScheduleProfessionRecipeScan();
+end
+
+CraftHelper["TRADE_SKILL_DETAILS_UPDATE"] = function(self)
+    self:ScheduleProfessionRecipeScan();
+end
+
+CraftHelper["TRADE_SKILL_LIST_UPDATE"] = function(self)
+    self:ScheduleProfessionRecipeScan();
+end
+
+CraftHelper["TRADE_SKILL_SHOW"] = function(self)
+    self:ScheduleProfessionRecipeScan();
 end
 
 -- ---------------------------------------------------------------------------
@@ -207,20 +238,59 @@ function CraftHelper:ScanExistingFavorites()
 
     for _, option in ipairs(results.options) do
         if option.spellID then
-            if not self.Data.db.recipes[option.spellID] then
-                self:CaptureRecipeFromSpellID(option.spellID, option.itemName, false, "craftorders");
-            end
+            self:CaptureRecipeFromSpellID(option.spellID, option.itemName, false, CRAFT_ORDER_SOURCE);
         end
     end
     self.UI:Refresh();
 end
 
 -- ---------------------------------------------------------------------------
--- Scan currently tracked profession recipes
+-- Scan current profession favorites and tracked profession recipes
 -- ---------------------------------------------------------------------------
+function CraftHelper:ScanProfessionRecipes()
+    local shouldRefresh = false;
+
+    if self:ScanProfessionFavorites() then
+        shouldRefresh = true;
+    end
+    if self:ScanTrackedRecipes() then
+        shouldRefresh = true;
+    end
+
+    if shouldRefresh then
+        self.UI:Refresh();
+    end
+end
+
+function CraftHelper:ScanProfessionFavorites()
+    if not C_TradeSkillUI or not C_TradeSkillUI.GetAllRecipeIDs or not C_TradeSkillUI.IsRecipeFavorite then
+        return false;
+    end
+
+    local ok, recipeIDs = pcall(C_TradeSkillUI.GetAllRecipeIDs);
+    if not ok or type(recipeIDs) ~= "table" then
+        return false;
+    end
+
+    local foundCurrentProfession = false;
+    for _, recipeID in ipairs(recipeIDs) do
+        foundCurrentProfession = true;
+        local favoriteOk, isFavorite = pcall(C_TradeSkillUI.IsRecipeFavorite, recipeID);
+        if favoriteOk then
+            if isFavorite then
+                self:QueueProfessionRecipe(recipeID, false, PROFESSION_FAVORITE_SOURCE);
+            else
+                self.Data:RemoveRecipe(recipeID, PROFESSION_FAVORITE_SOURCE);
+            end
+        end
+    end
+
+    return foundCurrentProfession;
+end
+
 function CraftHelper:ScanTrackedRecipes()
     if not C_TradeSkillUI or not C_TradeSkillUI.GetRecipesTracked then
-        return;
+        return false;
     end
 
     local foundTracked = false;
@@ -229,26 +299,28 @@ function CraftHelper:ScanTrackedRecipes()
         if ok and tracked then
             foundTracked = true;
             for _, recipeID in ipairs(tracked) do
-                self:QueueTrackedRecipe(recipeID, isRecraft);
+                self:QueueProfessionRecipe(recipeID, isRecraft, PROFESSION_TRACKED_SOURCE);
             end
         end
     end
 
-    if foundTracked then
-        self.UI:Refresh();
-    end
+    return foundTracked;
 end
 
-function CraftHelper:ScheduleTrackedRecipeScan()
-    if self.trackedRecipeScanScheduled then
+function CraftHelper:ScheduleProfessionRecipeScan()
+    if self.professionRecipeScanScheduled then
         return;
     end
 
-    self.trackedRecipeScanScheduled = true;
+    self.professionRecipeScanScheduled = true;
     C_Timer.After(0.5, function()
-        CraftHelper.trackedRecipeScanScheduled = false;
-        CraftHelper:ScanTrackedRecipes();
+        CraftHelper.professionRecipeScanScheduled = false;
+        CraftHelper:ScanProfessionRecipes();
     end);
+end
+
+function CraftHelper:ScheduleTrackedRecipeScan()
+    self:ScheduleProfessionRecipeScan();
 end
 
 function CraftHelper:IsProfessionRecipeTracked(recipeID)
@@ -266,23 +338,25 @@ function CraftHelper:IsProfessionRecipeTracked(recipeID)
     return false;
 end
 
-function CraftHelper:QueueTrackedRecipe(recipeID, isRecraft)
+function CraftHelper:QueueProfessionRecipe(recipeID, isRecraft, source)
     if not recipeID then
         return;
     end
 
-    if C_TradeSkillUI and C_TradeSkillUI.IsRecipeTracked then
+    local normalizedSource = source or PROFESSION_TRACKED_SOURCE;
+    if normalizedSource == PROFESSION_TRACKED_SOURCE and C_TradeSkillUI and C_TradeSkillUI.IsRecipeTracked then
         local ok, isTracked = pcall(C_TradeSkillUI.IsRecipeTracked, recipeID, isRecraft or false);
         if ok and not isTracked then
             return;
         end
     end
 
-    local key = tostring(recipeID) .. ":" .. tostring(isRecraft or false);
+    local key = tostring(recipeID) .. ":" .. tostring(isRecraft or false) .. ":" .. normalizedSource;
     if not self.pendingProfessionRecipes[key] then
         self.pendingProfessionRecipes[key] = {
             recipeID = recipeID,
             isRecraft = isRecraft or false,
+            source = normalizedSource,
             attempts = 0,
         };
     end
@@ -309,10 +383,10 @@ function CraftHelper:ProcessPendingProfessionRecipes()
     for key, entry in pairs(self.pendingProfessionRecipes) do
         entry.attempts = entry.attempts + 1;
 
-        if self:CaptureRecipeFromSpellID(entry.recipeID, nil, entry.isRecraft, "professions") then
+        if self:CaptureRecipeFromSpellID(entry.recipeID, nil, entry.isRecraft, entry.source) then
             self.pendingProfessionRecipes[key] = nil;
             changed = true;
-        elseif entry.attempts >= 8 then
+        elseif entry.attempts >= 20 then
             self.pendingProfessionRecipes[key] = nil;
         else
             hasPending = true;
@@ -421,7 +495,7 @@ function CraftHelper:OnRecipeFavorited(form)
         form.CraftHelperRecipeName,
         form.CraftHelperReagents,
         form.CraftHelperIsRecraft,
-        "craftorders"
+        CRAFT_ORDER_SOURCE
     );
 
     self.UI:Refresh();
@@ -432,7 +506,7 @@ function CraftHelper:OnRecipeUnfavorited(form)
         return;
     end
 
-    self.Data:RemoveRecipe(form.CraftHelperSpellID);
+    self.Data:RemoveRecipe(form.CraftHelperSpellID, CRAFT_ORDER_SOURCE);
     self.UI:Refresh();
 end
 

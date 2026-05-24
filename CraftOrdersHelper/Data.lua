@@ -2,6 +2,12 @@ local _, CraftHelper = ...;
 
 CraftHelper.Data = {};
 
+local PROFESSION_SOURCES = {
+    professions = true,
+    profession_favorites = true,
+    profession_tracked = true,
+};
+
 local function SafeGetItemCount(itemID)
     if C_Item and C_Item.GetItemCount then
         return C_Item.GetItemCount(itemID) or 0;
@@ -130,6 +136,16 @@ function CraftHelper.Data.RecipeHasSource(recipe, source)
     if source == "all" then
         return true;
     end
+    if source == "professions" then
+        if recipe.sources then
+            for professionSource in pairs(PROFESSION_SOURCES) do
+                if recipe.sources[professionSource] then
+                    return true;
+                end
+            end
+        end
+        return PROFESSION_SOURCES[recipe.source] == true;
+    end
     if recipe.sources and recipe.sources[source] then
         return true;
     end
@@ -155,7 +171,7 @@ function CraftHelper.Data:RemoveRecipe(recipeID, source)
     if source then
         local recipe = self.db.recipes[recipeID];
         if not recipe then
-            return;
+            return false;
         end
 
         local sources = CopyRecipeSources(recipe);
@@ -164,11 +180,15 @@ function CraftHelper.Data:RemoveRecipe(recipeID, source)
         if next(sources) then
             recipe.sources = sources;
             recipe.source = next(sources);
-            return;
+            return true;
         end
     end
 
+    if not self.db.recipes[recipeID] then
+        return false;
+    end
     self.db.recipes[recipeID] = nil;
+    return true;
 end
 
 -- Get active DB based on viewCharacter setting
