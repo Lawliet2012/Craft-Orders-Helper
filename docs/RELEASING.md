@@ -5,7 +5,7 @@ Releases are created from annotated Git tags. A tag runs the release workflow, w
 ## One-time setup
 
 1. Create the CurseForge project manually and copy its numeric project ID from the project's About box.
-2. In GitHub, add a repository variable named `CURSEFORGE_PROJECT_ID` with that numeric ID.
+2. In GitHub, add a repository variable named `CURSEFORGE_PROJECT_ID` with that numeric ID. A secret with the same name also works.
 3. In GitHub, add an Actions secret named `CF_API_KEY` with a CurseForge API token. If a token was pasted into chat, an issue, or logs, revoke it and create a fresh token first.
 4. In GitHub repository settings, allow GitHub Actions to create releases by giving the workflow token read and write contents permissions.
 
