@@ -1,0 +1,10 @@
+package-as: CraftOrdersHelper
+
+# Files/folders to ignore when packaging
+ignore:
+  - README.md
+  - LICENSE
+  - .gitignore
+  - .github
+  - .vscode
+  - CHANGELOG.md

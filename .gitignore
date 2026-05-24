@@ -1,0 +1,17 @@
+# Generated files
+*.zip
+*.7z
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.old
+*.orig

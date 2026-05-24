@@ -1,0 +1,23 @@
+name: Package and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Package and Release
+        uses: BigWigsMods/packager@v2
+        with:
+          args: -S
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Uncomment after adding CurseForge API token as secret:
+          # CF_API_KEY: ${{ secrets.CF_API_KEY }}
