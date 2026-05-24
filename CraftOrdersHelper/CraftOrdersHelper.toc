@@ -2,7 +2,7 @@
 ## Title: CraftOrdersHelper
 ## Notes: Tracks crafting order favorite recipes and shows needed reagents at the Auction House
 ## Author: OpenCode
-## Version: 1.4.2
+## Version: 1.4.3
 ## SavedVariables: CraftHelperDB
 ## SavedVariablesPerCharacter: CraftHelperDB_Char
 ## IconTexture: Interface\AddOns\CraftOrdersHelper\Icon

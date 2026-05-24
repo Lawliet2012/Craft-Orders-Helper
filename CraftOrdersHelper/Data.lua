@@ -111,17 +111,66 @@ function CraftHelper.Data:GetItemCount(itemID)
     return self.bagCache[itemID];
 end
 
+local function CopyRecipeSources(recipe)
+    local sources = {};
+    if recipe and type(recipe.sources) == "table" then
+        for source, enabled in pairs(recipe.sources) do
+            if enabled then
+                sources[source] = true;
+            end
+        end
+    end
+    if recipe and recipe.source then
+        sources[recipe.source] = true;
+    end
+    return sources;
+end
+
+function CraftHelper.Data:RecipeHasSource(recipe, source)
+    if source == "all" then
+        return true;
+    end
+    if recipe.sources and recipe.sources[source] then
+        return true;
+    end
+    return recipe.source == source;
+end
+
 function CraftHelper.Data:SaveRecipe(recipeID, recipeName, reagents, isRecraft, source)
+    local existing = self.db.recipes[recipeID];
+    local sources = CopyRecipeSources(existing);
+    sources[source or "unknown"] = true;
+
     self.db.recipes[recipeID] = {
         name = recipeName or ("Recipe " .. recipeID),
         reagents = reagents,
         isRecraft = isRecraft,
         timestamp = time(),
         source = source or "unknown",
+        sources = sources,
     };
 end
 
-function CraftHelper.Data:RemoveRecipe(recipeID)
+function CraftHelper.Data:RemoveRecipe(recipeID, source)
+    if source then
+        local recipe = self.db.recipes[recipeID];
+        if not recipe then
+            return;
+        end
+
+        local sources = CopyRecipeSources(recipe);
+        sources[source] = nil;
+
+        if next(sources) then
+            recipe.sources = sources;
+            for remainingSource in pairs(sources) do
+                recipe.source = remainingSource;
+                break
+            end
+            return;
+        end
+    end
+
     self.db.recipes[recipeID] = nil;
 end
 
@@ -165,7 +214,7 @@ function CraftHelper.Data:GetAllRecipes()
 
     for recipeID, recipe in pairs(activeDB.recipes) do
         local sourceFilter = self.viewSource;
-        if sourceFilter == "all" or recipe.source == sourceFilter then
+        if self:RecipeHasSource(recipe, sourceFilter) then
             result[recipeID] = recipe;
         end
     end
