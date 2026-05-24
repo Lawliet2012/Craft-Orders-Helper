@@ -76,6 +76,7 @@ if ($metadata.ContainsKey("IconTexture")) {
 
 $pkgmeta = Get-Content -Raw -LiteralPath $pkgmetaPath
 Assert-Valid ($pkgmeta -match "(?m)^\s*package-as:\s*$([regex]::Escape($AddonDir))\s*$") ".pkgmeta package-as must be $AddonDir."
+Assert-Valid ($pkgmeta -match "(?m)^\s*$([regex]::Escape("$AddonDir/$AddonDir")):\s*$([regex]::Escape($AddonDir))\s*$") ".pkgmeta must move the nested addon folder into the package root."
 foreach ($ignored in @(".github", "docs", "scripts")) {
     Assert-Valid ($pkgmeta -match "(?m)^\s*-\s*$([regex]::Escape($ignored))\s*$") ".pkgmeta should ignore $ignored so development files are not shipped."
 }

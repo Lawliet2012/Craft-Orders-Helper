@@ -1,5 +1,8 @@
 package-as: CraftOrdersHelper
 
+move-folders:
+  CraftOrdersHelper/CraftOrdersHelper: CraftOrdersHelper
+
 # Files/folders to ignore when packaging
 ignore:
   - README.md
