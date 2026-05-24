@@ -217,7 +217,7 @@ end
 -- ---------------------------------------------------------------------------
 -- Hook into Crafting Order form
 -- ---------------------------------------------------------------------------
-function CraftHelper:TryHookCraftingForm()
+function CraftHelper.TryHookCraftingForm()
     if not ProfessionsCustomerOrderFormMixin then
         return false;
     end
@@ -360,7 +360,7 @@ end
 -- ---------------------------------------------------------------------------
 -- Utilities
 -- ---------------------------------------------------------------------------
-function CraftHelper:Print(msg)
+function CraftHelper.Print(_, msg)
     print("|cFF00FF00CraftOrdersHelper|r: " .. tostring(msg));
 end
 

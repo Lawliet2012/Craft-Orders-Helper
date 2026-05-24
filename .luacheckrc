@@ -1,14 +1,16 @@
 std = "lua51"
 
 globals = {
+    "_G",
     "CraftHelperDB",
     "CraftHelperDB_Char",
+    "ProfessionsCustomerOrderFormMixin",
     "SLASH_CRAFTHELPER1",
     "SLASH_CRAFTHELPER2",
+    "SlashCmdList",
 }
 
 read_globals = {
-    "_G",
     "AuctionFrame",
     "AuctionFrameBrowse",
     "AuctionFrameBrowse_Search",
@@ -28,8 +30,6 @@ read_globals = {
     "GetItemCount",
     "GetItemInfo",
     "GetRealmName",
-    "ProfessionsCustomerOrderFormMixin",
-    "SlashCmdList",
     "UIParent",
     "UnitName",
     "time",

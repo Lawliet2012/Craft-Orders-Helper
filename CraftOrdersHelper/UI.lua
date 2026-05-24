@@ -186,8 +186,8 @@ function CraftHelper.UI:CreateFrame()
     cb.text:SetText("Aggregate all recipes");
     cb.text:SetTextColor(1, 0.82, 0, 1);
     cb:SetChecked(true);
-    cb:SetScript("OnClick", function(self)
-        CraftHelper.UI.isAggregate = self:GetChecked();
+    cb:SetScript("OnClick", function(button)
+        CraftHelper.UI.isAggregate = button:GetChecked();
         CraftHelper.UI:Refresh();
     end);
     self.aggregateCheckbox = cb;
@@ -329,7 +329,7 @@ function CraftHelper.UI:SearchItem(itemName)
     end
 end
 
-function CraftHelper.UI:GetRecipeList()
+function CraftHelper.UI.GetRecipeList()
     return CraftHelper.Data:GetRecipeNames();
 end
 
@@ -391,9 +391,9 @@ function CraftHelper.UI:GetOrCreateRow(index)
         local data = row.data;
         if data then CraftHelper.UI:SearchItem(data.name); end
     end);
-    iconBtn:SetScript("OnEnter", function(self)
+    iconBtn:SetScript("OnEnter", function(button)
         row.highlight:Show();
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+        GameTooltip:SetOwner(button, "ANCHOR_RIGHT");
         if row.data and row.data.itemID then
             GameTooltip:SetItemByID(row.data.itemID);
         end
@@ -412,9 +412,9 @@ function CraftHelper.UI:GetOrCreateRow(index)
         local data = row.data;
         if data then CraftHelper.UI:SearchItem(data.name); end
     end);
-    nameBtn:SetScript("OnEnter", function(self)
+    nameBtn:SetScript("OnEnter", function(button)
         row.highlight:Show();
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+        GameTooltip:SetOwner(button, "ANCHOR_RIGHT");
         if row.data and row.data.itemID then
             GameTooltip:SetItemByID(row.data.itemID);
         end
@@ -493,7 +493,9 @@ function CraftHelper.UI:Refresh()
     end
 
     if #reagents == 0 then
-        self.statusText:SetText(self.isAggregate and "All reagents in bags!" or "All reagents for this recipe in bags!");
+        local statusMessage = self.isAggregate and "All reagents in bags!"
+            or "All reagents for this recipe in bags!";
+        self.statusText:SetText(statusMessage);
         self.statusText:Show();
         self.content:SetHeight(100);
         return;
@@ -514,7 +516,11 @@ function CraftHelper.UI:Refresh()
                     end
                 end
             end
-            CraftHelper.Data:UpdateReagentName(reagent.qualityItemIDs[1], reagent.qualityNames[1], reagent.qualityIcons[1]);
+            CraftHelper.Data:UpdateReagentName(
+                reagent.qualityItemIDs[1],
+                reagent.qualityNames[1],
+                reagent.qualityIcons[1]
+            );
         else
             local refreshedName, _, _, _, _, _, _, _, _, refreshedIcon = SafeGetItemInfo(reagent.itemID);
             if refreshedName and refreshedName ~= "" then
