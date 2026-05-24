@@ -4,6 +4,8 @@ package-as: CraftOrdersHelper
 ignore:
   - README.md
   - LICENSE
+  - docs
+  - scripts
   - .gitignore
   - .github
   - .vscode

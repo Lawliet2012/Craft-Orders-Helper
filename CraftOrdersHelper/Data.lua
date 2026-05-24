@@ -1,4 +1,4 @@
-local addonName, CraftHelper = ...;
+local _, CraftHelper = ...;
 
 CraftHelper.Data = {};
 

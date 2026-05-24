@@ -9,7 +9,7 @@ local function SafeGetItemInfo(itemID)
 end
 
 CraftHelper.events = CreateFrame("Frame");
-CraftHelper.events:SetScript("OnEvent", function(self, event, ...)
+CraftHelper.events:SetScript("OnEvent", function(_, event, ...)
     if CraftHelper[event] then
         CraftHelper[event](CraftHelper, ...);
     end

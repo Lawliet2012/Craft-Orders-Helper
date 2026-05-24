@@ -1,6 +1,7 @@
 # Generated files
 *.zip
 *.7z
+.release/
 
 # IDE
 .vscode/

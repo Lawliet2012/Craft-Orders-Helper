@@ -1,4 +1,4 @@
-## Interface: 120005, 120001, 11508, 11507, 11506, 50503, 40400, 30403, 20505
+## Interface: 120005
 ## Title: CraftOrdersHelper
 ## Notes: Tracks crafting order favorite recipes and shows needed reagents at the Auction House
 ## Author: OpenCode

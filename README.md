@@ -1,5 +1,7 @@
 # CraftOrdersHelper
 
+[![CI](https://github.com/Lawliet2012/Craft-Orders-Helper/actions/workflows/ci.yml/badge.svg)](https://github.com/Lawliet2012/Craft-Orders-Helper/actions/workflows/ci.yml)
+
 Tracks your favorited Crafting Order recipes and shows exactly which reagents you need to buy when you open the Auction House.
 
 ## Features
@@ -25,6 +27,10 @@ Tracks your favorited Crafting Order recipes and shows exactly which reagents yo
 ## Installation
 
 Download the latest release and extract the `CraftOrdersHelper` folder into your `World of Warcraft\_retail_\Interface\AddOns\` directory.
+
+## Releasing
+
+Releases are automated from annotated `v*` tags after CI passes. See [docs/RELEASING.md](docs/RELEASING.md) for the setup checklist and release flow.
 
 ## License
 

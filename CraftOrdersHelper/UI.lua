@@ -1,4 +1,4 @@
-local addonName, CraftHelper = ...;
+local _, CraftHelper = ...;
 
 CraftHelper.UI = {};
 CraftHelper.UI.rows = {};
@@ -133,7 +133,7 @@ function CraftHelper.UI:DetectAndAttachToAuctionHouse()
 
     local waiter = CreateFrame("Frame");
     waiter:RegisterEvent("ADDON_LOADED");
-    waiter:SetScript("OnEvent", function(_, event, addon)
+    waiter:SetScript("OnEvent", function(_, _event, addon)
         if addon == "Blizzard_AuctionHouseUI" then
             CraftHelper.UI:AttachToModernAH();
             waiter:UnregisterAllEvents();
