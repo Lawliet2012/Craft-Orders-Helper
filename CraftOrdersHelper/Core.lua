@@ -224,7 +224,7 @@ function CraftHelper:ScanTrackedRecipes()
     end
 
     local foundTracked = false;
-    for _, isRecraft in ipairs({ false, true }) do
+    for _, isRecraft in ipairs(self.professionRecipeScanModes or { false, true }) do
         local ok, tracked = pcall(C_TradeSkillUI.GetRecipesTracked, isRecraft);
         if ok and tracked then
             foundTracked = true;
@@ -256,7 +256,7 @@ function CraftHelper:IsProfessionRecipeTracked(recipeID)
         return false;
     end
 
-    for _, isRecraft in ipairs({ false, true }) do
+    for _, isRecraft in ipairs(self.professionRecipeScanModes or { false, true }) do
         local ok, isTracked = pcall(C_TradeSkillUI.IsRecipeTracked, recipeID, isRecraft);
         if ok and isTracked then
             return true;

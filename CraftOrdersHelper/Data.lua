@@ -126,7 +126,7 @@ local function CopyRecipeSources(recipe)
     return sources;
 end
 
-function CraftHelper.Data:RecipeHasSource(recipe, source)
+function CraftHelper.Data.RecipeHasSource(recipe, source)
     if source == "all" then
         return true;
     end
@@ -163,10 +163,7 @@ function CraftHelper.Data:RemoveRecipe(recipeID, source)
 
         if next(sources) then
             recipe.sources = sources;
-            for remainingSource in pairs(sources) do
-                recipe.source = remainingSource;
-                break
-            end
+            recipe.source = next(sources);
             return;
         end
     end
@@ -214,7 +211,7 @@ function CraftHelper.Data:GetAllRecipes()
 
     for recipeID, recipe in pairs(activeDB.recipes) do
         local sourceFilter = self.viewSource;
-        if self:RecipeHasSource(recipe, sourceFilter) then
+        if CraftHelper.Data.RecipeHasSource(recipe, sourceFilter) then
             result[recipeID] = recipe;
         end
     end
